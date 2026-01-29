@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
-	"github.com/fahmi/go-order-api/internal/config"
+	"github.com/fahmiabd/go-order-api/internal/config"
 )
 
 func main() {
@@ -15,6 +15,8 @@ func main() {
 	db, err := config.InitDB()
 	if err != nil {
 		log.Println("warning: database not connected, running without DB")
+	} else {
+		config.AutoMigrate(db)
 	}
 
 	r := gin.Default()
