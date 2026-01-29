@@ -3,7 +3,7 @@ package config
 import (
 	"log"
 
-	"github.com/fahmiabd/go-order-api/internal/model"
+	"github.com/fahmiabd/go-order-api/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -14,8 +14,9 @@ func AutoMigrate(db *gorm.DB) {
 	}
 
 	err := db.AutoMigrate(
-		&model.User{},
-		&model.Order{},
+		&models.User{},
+		&models.Order{},
+		&models.Product{},
 	)
 
 	if err != nil {

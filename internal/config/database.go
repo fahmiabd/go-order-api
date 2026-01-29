@@ -30,6 +30,7 @@ func InitDB() (*gorm.DB, error) {
 			return db, nil
 		}
 
+		log.Print(dsn)
 		log.Printf("db connection attempt %d failed, retrying...", i)
 		time.Sleep(2 * time.Second)
 	}

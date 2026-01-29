@@ -1,7 +1,7 @@
 package order
 
 import (
-	"github.com/fahmiabd/go-order-api/internal/model"
+	"github.com/fahmiabd/go-order-api/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -13,12 +13,12 @@ func NewOrderRepository(db *gorm.DB) IOrderRepository {
 	return &orderRepository{db: db}
 }
 
-func (r *orderRepository) Create(order *model.Order) error {
+func (r *orderRepository) Create(order *models.Order) error {
 	return r.db.Create(order).Error
 }
 
-func (r *orderRepository) FindByID(id uint) (*model.Order, error) {
-	var order model.Order
+func (r *orderRepository) FindByID(id uint) (*models.Order, error) {
+	var order models.Order
 	err := r.db.Preload("User").First(&order, id).Error
 	if err != nil {
 		return nil, err
@@ -30,12 +30,12 @@ func (r *orderRepository) FindByUser(
 	userID uint,
 	limit int,
 	offset int,
-) ([]model.Order, int64, error) {
+) ([]models.Order, int64, error) {
 
-	var orders []model.Order
+	var orders []models.Order
 	var total int64
 
-	r.db.Model(&model.Order{}).
+	r.db.Model(&models.Order{}).
 		Where("user_id = ?", userID).
 		Count(&total)
 
@@ -49,10 +49,10 @@ func (r *orderRepository) FindByUser(
 	return orders, total, err
 }
 
-func (r *orderRepository) Update(order *model.Order) error {
+func (r *orderRepository) Update(order *models.Order) error {
 	return r.db.Save(order).Error
 }
 
 func (r *orderRepository) Delete(id uint) error {
-	return r.db.Delete(&model.Order{}, id).Error
+	return r.db.Delete(&models.Order{}, id).Error
 }

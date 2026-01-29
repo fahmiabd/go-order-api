@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -13,29 +12,37 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID uint) (string, error) {
+type JWTManager struct {
+	secret string
+	ttl    time.Duration
+}
+
+func NewJWTManager(secret string, ttl time.Duration) *JWTManager {
+	return &JWTManager{
+		secret: secret,
+		ttl:    ttl,
+	}
+}
+
+func (j *JWTManager) Generate(userID uint) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.ttl)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret := os.Getenv("JWT_SECRET")
-
-	return token.SignedString([]byte(secret))
+	return token.SignedString([]byte(j.secret))
 }
 
-func ParseToken(tokenString string) (*Claims, error) {
-	secret := os.Getenv("JWT_SECRET")
-
+func (j *JWTManager) Parse(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&Claims{},
 		func(t *jwt.Token) (interface{}, error) {
-			return []byte(secret), nil
+			return []byte(j.secret), nil
 		},
 	)
 

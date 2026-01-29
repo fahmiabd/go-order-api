@@ -4,8 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/fahmiabd/go-order-api/internal/model"
-	"github.com/fahmiabd/go-order-api/internal/pkg/auth"
+	"github.com/fahmiabd/go-order-api/internal/models"
 	"github.com/fahmiabd/go-order-api/internal/repositories/user"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -20,38 +19,32 @@ func NewUserService(userRepo user.IUserRepository) IUserService {
 	}
 }
 
-func (s *userService) Login(email, password string) (string, error) {
+func (s *userService) Login(email, password string) (*models.User, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 	if email == "" || password == "" {
-		return "", errors.New("email and password are required")
+		return nil, errors.New("email and password are required")
 	}
 
 	user, err := s.userRepo.FindByEmail(email)
 	if err != nil {
-		return "", errors.New("invalid email or password")
+		return nil, errors.New("invalid email or password")
 	}
 
-	err = bcrypt.CompareHashAndPassword(
+	if err := bcrypt.CompareHashAndPassword(
 		[]byte(user.Password),
 		[]byte(password),
-	)
-	if err != nil {
-		return "", errors.New("invalid email or password")
+	); err != nil {
+		return nil, errors.New("invalid email or password")
 	}
 
-	token, err := auth.GenerateToken(user.ID)
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
+	return user, nil
 }
 
 func (s *userService) Register(
 	name string,
 	email string,
 	password string,
-) (*model.User, error) {
+) (*models.User, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 
 	// basic validation
@@ -74,7 +67,7 @@ func (s *userService) Register(
 		return nil, err
 	}
 
-	user := &model.User{
+	user := &models.User{
 		Name:     name,
 		Email:    email,
 		Password: string(hashedPassword),
@@ -87,7 +80,7 @@ func (s *userService) Register(
 	return user, nil
 }
 
-func (s *userService) GetByID(id uint) (*model.User, error) {
+func (s *userService) GetByID(id uint) (*models.User, error) {
 	if id == 0 {
 		return nil, errors.New("invalid user id")
 	}
@@ -95,7 +88,7 @@ func (s *userService) GetByID(id uint) (*model.User, error) {
 	return s.userRepo.FindByID(id)
 }
 
-func (s *userService) GetByEmail(email string) (*model.User, error) {
+func (s *userService) GetByEmail(email string) (*models.User, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 	if email == "" {
 		return nil, errors.New("email is required")

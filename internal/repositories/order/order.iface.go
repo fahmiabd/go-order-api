@@ -1,15 +1,15 @@
 package order
 
-import "github.com/fahmiabd/go-order-api/internal/model"
+import "github.com/fahmiabd/go-order-api/internal/models"
 
 type IOrderRepository interface {
-	Create(order *model.Order) error
-	FindByID(id uint) (*model.Order, error)
+	Create(order *models.Order) error
+	FindByID(id uint) (*models.Order, error)
 	FindByUser(
 		userID uint,
 		limit int,
 		offset int,
-	) ([]model.Order, int64, error)
-	Update(order *model.Order) error
+	) ([]models.Order, int64, error)
+	Update(order *models.Order) error
 	Delete(id uint) error
 }

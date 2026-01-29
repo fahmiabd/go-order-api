@@ -1,9 +1,9 @@
 package user
 
-import "github.com/fahmiabd/go-order-api/internal/model"
+import "github.com/fahmiabd/go-order-api/internal/models"
 
 type IUserRepository interface {
-	Create(user *model.User) error
-	FindByEmail(email string) (*model.User, error)
-	FindByID(id uint) (*model.User, error)
+	Create(user *models.User) error
+	FindByEmail(email string) (*models.User, error)
+	FindByID(id uint) (*models.User, error)
 }

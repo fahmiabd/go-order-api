@@ -1,41 +1,49 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
-	"github.com/fahmiabd/go-order-api/internal/pkg/auth"
-	"github.com/gin-gonic/gin"
+	authService "github.com/fahmiabd/go-order-api/internal/services/auth"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		header := c.GetHeader("Authorization")
-		if header == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "missing authorization header",
-			})
-			return
-		}
+type contextKey string
 
-		parts := strings.Split(header, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid authorization format",
-			})
-			return
-		}
+const userIDKey contextKey = "user_id"
 
-		claims, err := auth.ParseToken(parts[1])
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid or expired token",
-			})
-			return
-		}
+func AuthMiddleware(authService authService.IAuthService) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				http.Error(w, "authorization header required", http.StatusUnauthorized)
+				return
+			}
 
-		// simpan user_id ke context
-		c.Set("user_id", claims.UserID)
-		c.Next()
+			parts := strings.Split(authHeader, " ")
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				http.Error(w, "invalid authorization header format", http.StatusUnauthorized)
+				return
+			}
+
+			userID, err := authService.ValidateToken(parts[1])
+			if err != nil {
+				http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+				return
+			}
+
+			// inject user_id ke context
+			ctx := context.WithValue(r.Context(), userIDKey, userID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
 	}
+}
+
+func UserIDFromContext(ctx context.Context) uint {
+	userID, ok := ctx.Value(userIDKey).(uint)
+	if !ok {
+		return 0
+	}
+	return userID
 }
