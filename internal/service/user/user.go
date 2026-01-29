@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/fahmiabd/go-order-api/internal/model"
+	"github.com/fahmiabd/go-order-api/internal/pkg/auth"
 	"github.com/fahmiabd/go-order-api/internal/repositories/user"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,6 +18,33 @@ func NewUserService(userRepo user.IUserRepository) IUserService {
 	return &userService{
 		userRepo: userRepo,
 	}
+}
+
+func (s *userService) Login(email, password string) (string, error) {
+	email = strings.ToLower(strings.TrimSpace(email))
+	if email == "" || password == "" {
+		return "", errors.New("email and password are required")
+	}
+
+	user, err := s.userRepo.FindByEmail(email)
+	if err != nil {
+		return "", errors.New("invalid email or password")
+	}
+
+	err = bcrypt.CompareHashAndPassword(
+		[]byte(user.Password),
+		[]byte(password),
+	)
+	if err != nil {
+		return "", errors.New("invalid email or password")
+	}
+
+	token, err := auth.GenerateToken(user.ID)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
 
 func (s *userService) Register(
