@@ -3,8 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -12,14 +10,9 @@ import (
 
 	"github.com/fahmiabd/go-order-api/internal/config"
 	"github.com/fahmiabd/go-order-api/internal/models"
-	"github.com/fahmiabd/go-order-api/internal/pkg/auth"
-	orderRepositories "github.com/fahmiabd/go-order-api/internal/repositories/order"
-	productRepositories "github.com/fahmiabd/go-order-api/internal/repositories/product"
-	userRepositories "github.com/fahmiabd/go-order-api/internal/repositories/user"
+	"github.com/fahmiabd/go-order-api/internal/repositories"
 	"github.com/fahmiabd/go-order-api/internal/routes"
-	authService "github.com/fahmiabd/go-order-api/internal/services/auth"
-	orderService "github.com/fahmiabd/go-order-api/internal/services/order"
-	userService "github.com/fahmiabd/go-order-api/internal/services/user"
+	"github.com/fahmiabd/go-order-api/internal/services"
 )
 
 func main() {
@@ -30,15 +23,7 @@ func main() {
 	r := chi.NewRouter()
 
 	// basic middlewares
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-
-	// ===== dependencies =====
-	jwtManager := auth.NewJWTManager(
-		os.Getenv("JWT_SECRET"),
-		24*time.Hour,
-	)
 
 	db, err := config.InitDB()
 	if err != nil {
@@ -54,19 +39,14 @@ func main() {
 		log.Fatal("failed to auto migrate:", err)
 	}
 
-	userRepo := userRepositories.NewUserRepository(db)
-	orderRepo := orderRepositories.NewOrderRepository(db)
-	productRepo := productRepositories.NewProductRepository(db)
-
-	authService := authService.NewAuthService(jwtManager)
-	userService := userService.NewUserService(userRepo)
-	orderService := orderService.NewOrderService(orderRepo, productRepo)
+	repositories := repositories.NewRepositories(db)
+	services := services.NewServices(repositories)
 
 	// ===== routes =====
 	routes.Register(r, routes.RouterDeps{
-		AuthService:  authService,
-		UserService:  userService,
-		OrderService: orderService,
+		AuthService:  services.AuthService,
+		UserService:  services.UserService,
+		OrderService: services.OrderService,
 	})
 
 	log.Println("server running on :8080")

@@ -28,7 +28,8 @@ func Register(r chi.Router, deps RouterDeps) {
 	)
 
 	// public routes
-	r.Post("/login", authController.Login)
+	r.Post("/auth/login", authController.Login)
+	r.Post("/auth/register", authController.Register)
 
 	// protected routes
 	r.Route("/orders", func(r chi.Router) {
